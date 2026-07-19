@@ -259,3 +259,93 @@ MySQL aggregate values are converted to JavaScript numbers before the response i
 7. Verify `/setup`, `/login`, all `/admin/*` routes, logout, refresh-token behavior, sidebar collapse persistence, mobile overlay, and Escape handling.
 8. Check the layout at 375px, 768px, 1024px, and 1440px widths.
 9. Run `npm run lint` in `backend` and `npm run build` in `admin-panel`.
+
+## Phase 5 — Medicine Categories Management
+
+Phase 5 replaces the category placeholder with a complete authenticated category-management module. Administrators can search, filter, sort, paginate, create, view, edit, activate, deactivate, refresh, and safely delete medicine categories.
+
+### Backend routes
+
+All category endpoints require an authenticated administrator:
+
+```http
+GET    /api/categories
+GET    /api/categories/:id
+POST   /api/categories
+PUT    /api/categories/:id
+PATCH  /api/categories/:id/status
+DELETE /api/categories/:id
+```
+
+The list endpoint supports:
+
+- `page` — positive integer, default `1`
+- `limit` — integer from `1` to `100`, default `10`
+- `search` — category name or description
+- `status` — `active` or `inactive`
+- `sortBy` — `category_name`, `status`, `created_at`, or `updated_at`
+- `sortDirection` — `asc` or `desc`
+
+Medicine counts are returned through one aggregated query rather than one query per category. Pagination metadata includes the current page, limit, total records, total pages, and next/previous-page flags.
+
+### Validation and status rules
+
+- Category name is required, trimmed, and must contain 2–100 characters.
+- Repeated internal whitespace in names is normalized.
+- Category names must be unique without regard to letter case.
+- Description is optional, trimmed, and limited to 500 characters.
+- Status must be `active` or `inactive`; new categories default to `active`.
+- IDs must be positive integers.
+- Sort columns and directions are allowlisted before being used in SQL.
+- Only category fields are accepted and written by the category service.
+
+Deactivation does not delete a category or its medicine relationships. It marks the category unavailable for future active selections.
+
+### Safe deletion
+
+Before physical deletion, the service counts medicines referencing the category. A category with linked medicines returns HTTP `409` with `CATEGORY_IN_USE`; medicines are never cascade-deleted. An unused category can be deleted permanently.
+
+Category error codes:
+
+- `CATEGORY_NOT_FOUND`
+- `CATEGORY_ALREADY_EXISTS`
+- `CATEGORY_IN_USE`
+- `CATEGORY_CREATE_FAILED`
+- `CATEGORY_UPDATE_FAILED`
+- `CATEGORY_DELETE_FAILED`
+
+Raw database errors are translated before reaching category API consumers.
+
+### Frontend module
+
+The protected frontend route is:
+
+```text
+/admin/categories
+```
+
+The page includes:
+
+- Debounced name/description search
+- Status and sort filters with reset support
+- Responsive, horizontally contained category table
+- Results count, pagination, and manual refresh
+- Shared create/edit form with client and server validation
+- Details modal with medicine count and timestamps
+- Status-change confirmation
+- Permanent-delete confirmation and safe conflict feedback
+- Loading skeletons, filtered and unfiltered empty states, retry state, and toast notifications
+- Accessible labels, dialog semantics, Escape handling, focus restoration, and labelled icon actions
+
+### Phase 5 testing
+
+1. Start MySQL and apply the existing Phase 0, Phase 1, and Phase 3 scripts if the tables are not present.
+2. Seed an administrator with `node backend/scripts/seed-admin.js`.
+3. Start the backend and frontend.
+4. Confirm unauthenticated category requests return HTTP `401`.
+5. Sign in and test list pagination, search, status filters, and every sort option.
+6. Test valid creation plus empty name, duplicate name with different casing, invalid status, and descriptions over 500 characters.
+7. Test details, editing, duplicate-name editing, activation, and deactivation.
+8. Confirm unused categories delete successfully and linked categories return HTTP `409` with `CATEGORY_IN_USE`.
+9. Confirm existing health, authentication, dashboard, and non-category admin routes continue to work.
+10. Run `npm run lint` in `backend` and `npm run build` in `admin-panel`.

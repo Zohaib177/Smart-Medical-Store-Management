@@ -7,7 +7,7 @@ import SetupPage from './pages/SetupPage';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import MedicinesPlaceholderPage from './pages/MedicinesPlaceholderPage';
-import CategoriesPlaceholderPage from './pages/CategoriesPlaceholderPage';
+import CategoriesPage from './pages/CategoriesPage';
 import CompaniesPlaceholderPage from './pages/CompaniesPlaceholderPage';
 import SuppliersPlaceholderPage from './pages/SuppliersPlaceholderPage';
 import PurchasesPlaceholderPage from './pages/PurchasesPlaceholderPage';
@@ -37,7 +37,7 @@ function App() {
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<DashboardPage />} />
             <Route path="medicines" element={<MedicinesPlaceholderPage />} />
-            <Route path="categories" element={<CategoriesPlaceholderPage />} />
+            <Route path="categories" element={<CategoriesPage />} />
             <Route path="companies" element={<CompaniesPlaceholderPage />} />
             <Route path="suppliers" element={<SuppliersPlaceholderPage />} />
             <Route path="purchases" element={<PurchasesPlaceholderPage />} />
