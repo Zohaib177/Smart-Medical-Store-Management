@@ -15,10 +15,20 @@ function requireEnv(name) {
   return value;
 }
 
+function toList(value, fallback) {
+  return String(value || fallback)
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+const clientUrls = toList(process.env.CLIENT_URLS || process.env.CLIENT_URL, 'http://localhost:5173');
+
 const config = Object.freeze({
   nodeEnv: process.env.NODE_ENV || 'development',
   port: toNumber(process.env.PORT, 5000),
-  clientUrl: process.env.CLIENT_URL || 'http://localhost:5173',
+  clientUrl: clientUrls[0],
+  clientUrls: Object.freeze(clientUrls),
   database: Object.freeze({
     host: requireEnv('DB_HOST'),
     port: toNumber(process.env.DB_PORT, 3306),

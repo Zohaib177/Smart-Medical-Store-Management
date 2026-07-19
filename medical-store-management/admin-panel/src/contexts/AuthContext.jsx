@@ -29,8 +29,13 @@ export function AuthProvider({ children }) {
   };
 
   const logout = async () => {
-    await api.post('/auth/logout');
-    setAdmin(null);
+    try {
+      await api.post('/auth/logout');
+    } catch {
+      // Local session state must still be cleared when the server session has expired.
+    } finally {
+      setAdmin(null);
+    }
   };
 
   const value = useMemo(() => ({ admin, loading, login, logout }), [admin, loading]);

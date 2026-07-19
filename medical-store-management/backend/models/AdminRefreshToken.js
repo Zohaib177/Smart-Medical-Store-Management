@@ -1,5 +1,6 @@
 const BaseModel = require('./BaseModel');
 const crypto = require('crypto');
+const { executeQuery } = require('../services/databaseService');
 
 class AdminRefreshToken extends BaseModel {
   constructor() {
@@ -25,7 +26,7 @@ class AdminRefreshToken extends BaseModel {
 
   async findActiveTokenRecord(adminId, rawRefreshToken) {
     const tokenHash = crypto.createHash('sha256').update(rawRefreshToken).digest('hex');
-    const rows = await this.query(
+    const rows = await executeQuery(
       `SELECT * FROM ${this.tableName} WHERE admin_id = ? AND token_hash = ? AND revoked_at IS NULL AND expires_at > NOW() ORDER BY id DESC LIMIT 1`,
       [adminId, tokenHash]
     );
@@ -35,21 +36,21 @@ class AdminRefreshToken extends BaseModel {
 
   async revokeTokenRecord(adminId, rawRefreshToken) {
     const tokenHash = crypto.createHash('sha256').update(rawRefreshToken).digest('hex');
-    return this.query(
+    return executeQuery(
       `UPDATE ${this.tableName} SET revoked_at = NOW(), updated_at = NOW() WHERE admin_id = ? AND token_hash = ? AND revoked_at IS NULL`,
       [adminId, tokenHash]
     );
   }
 
   async revokeAllForAdmin(adminId) {
-    return this.query(
+    return executeQuery(
       `UPDATE ${this.tableName} SET revoked_at = NOW(), updated_at = NOW() WHERE admin_id = ? AND revoked_at IS NULL`,
       [adminId]
     );
   }
 
   async deleteExpiredTokens() {
-    return this.query(`DELETE FROM ${this.tableName} WHERE expires_at <= NOW() OR revoked_at IS NOT NULL`);
+    return executeQuery(`DELETE FROM ${this.tableName} WHERE expires_at <= NOW() OR revoked_at IS NOT NULL`);
   }
 }
 

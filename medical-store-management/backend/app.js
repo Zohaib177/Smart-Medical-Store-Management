@@ -8,6 +8,7 @@ const config = require('./config/environment');
 
 const healthRoutes = require('./routes/healthRoutes');
 const authRoutes = require('./routes/authRoutes');
+const dashboardRoutes = require('./routes/dashboardRoutes');
 const developmentRoutes = require('./routes/developmentRoutes');
 const notFound = require('./middleware/notFound');
 const errorHandler = require('./middleware/errorHandler');
@@ -19,7 +20,12 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 const corsOptions = {
-  origin: config.clientUrl,
+  origin(origin, callback) {
+    if (!origin || config.clientUrls.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error('Origin is not allowed by CORS'));
+  },
   credentials: true,
 };
 app.use(cors(corsOptions));
@@ -47,6 +53,7 @@ app.get(config.apiPrefix, (req, res) => {
 
 app.use(`${config.apiPrefix}/health`, healthRoutes);
 app.use(`${config.apiPrefix}/auth`, authRoutes);
+app.use(`${config.apiPrefix}/dashboard`, dashboardRoutes);
 
 if (config.isDevelopment) {
   app.use(`${config.apiPrefix}/dev`, developmentRoutes);

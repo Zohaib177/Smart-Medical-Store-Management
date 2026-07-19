@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 function LoginPage() {
@@ -8,7 +8,13 @@ function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const location = useLocation();
+  const { admin, login } = useAuth();
+  const destination = location.state?.from?.pathname || '/admin/dashboard';
+
+  if (admin) {
+    return <Navigate to="/admin/dashboard" replace />;
+  }
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -17,7 +23,7 @@ function LoginPage() {
 
     try {
       await login(email, password);
-      navigate('/dashboard');
+      navigate(destination, { replace: true });
     } catch (err) {
       setError(err?.response?.data?.message || 'Unable to sign in.');
     } finally {

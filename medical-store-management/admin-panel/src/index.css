@@ -23,3 +23,27 @@ body {
 * {
   box-sizing: border-box;
 }
+
+button,
+input {
+  font: inherit;
+}
+
+@keyframes mobile-sidebar-enter {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.mobile-sidebar-enter {
+  animation: mobile-sidebar-enter 180ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mobile-sidebar-enter {
+    animation: none;
+  }
+}
