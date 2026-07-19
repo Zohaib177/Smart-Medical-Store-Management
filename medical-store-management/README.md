@@ -118,6 +118,40 @@ npm run dev
 }
 ```
 
+## Phase 1 Database Design
+Phase 1 introduces the professional relational database schema for the medical store system.
+
+### What is included
+- Admins table for system administrators
+- Medicine categories and medicine companies lookup tables
+- Medicines table with pricing, stock, and expiry data
+- Suppliers and customers tables
+- Purchases and purchase_items for procurement flow
+- Sales and sale_items for billing flow
+- Inventory logs for stock movement tracking
+
+### Relationships
+- medicines.category_id -> medicine_categories.id
+- medicines.company_id -> medicine_companies.id
+- purchases.supplier_id -> suppliers.id
+- purchase_items.purchase_id -> purchases.id
+- purchase_items.medicine_id -> medicines.id
+- sales.customer_id -> customers.id
+- sale_items.sale_id -> sales.id
+- sale_items.medicine_id -> medicines.id
+- inventory_logs.medicine_id -> medicines.id
+
+### SQL file
+Run the Phase 1 schema file:
+```bash
+mysql -u root -p < database/phase_1_database_schema.sql
+```
+
+### Notes
+- The schema uses InnoDB for all tables.
+- It includes indexes, foreign keys, and check constraints where supported.
+- Seed data is included for default admin, categories, and companies.
+
 ## Troubleshooting
 - Ensure MySQL is running.
 - Verify the database credentials in backend/.env.
