@@ -28,6 +28,11 @@ const config = Object.freeze({
     connectionLimit: toNumber(process.env.DB_CONNECTION_LIMIT, 10),
   }),
   apiPrefix: process.env.API_PREFIX || '/api',
+  jwtSecret: process.env.JWT_SECRET || 'medical-store-dev-secret',
+  jwtRefreshSecret: process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET || 'medical-store-dev-refresh-secret',
+  jwtAccessExpiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '15m',
+  jwtRefreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
+  bcryptSaltRounds: toNumber(process.env.BCRYPT_SALT_ROUNDS, 12),
   isDevelopment: (process.env.NODE_ENV || 'development') === 'development',
   isProduction: (process.env.NODE_ENV || 'development') === 'production',
 });
