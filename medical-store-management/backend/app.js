@@ -13,6 +13,7 @@ const categoryRoutes = require('./routes/categoryRoutes');
 const companyRoutes = require('./routes/companyRoutes');
 const medicineRoutes = require('./routes/medicineRoutes');
 const inventoryRoutes = require('./routes/inventoryRoutes');
+const supplierRoutes = require('./routes/supplierRoutes');
 const developmentRoutes = require('./routes/developmentRoutes');
 const notFound = require('./middleware/notFound');
 const errorHandler = require('./middleware/errorHandler');
@@ -62,6 +63,7 @@ app.use(`${config.apiPrefix}/categories`, categoryRoutes);
 app.use(`${config.apiPrefix}/companies`, companyRoutes);
 app.use(`${config.apiPrefix}/medicines`, medicineRoutes);
 app.use(`${config.apiPrefix}/inventory`, inventoryRoutes);
+app.use(`${config.apiPrefix}/suppliers`, supplierRoutes);
 
 if (config.isDevelopment) {
   app.use(`${config.apiPrefix}/dev`, developmentRoutes);

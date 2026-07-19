@@ -551,3 +551,60 @@ The service starts one MySQL transaction, selects the medicine with `SELECT ... 
 8. Run `npm run lint` in `backend` and `npm run build` in `admin-panel`.
 
 Inventory errors include `MEDICINE_NOT_FOUND`, `INVALID_TRANSACTION_TYPE`, `INVALID_ADJUSTMENT_QUANTITY`, `INSUFFICIENT_STOCK`, `NEGATIVE_STOCK_NOT_ALLOWED`, `INVALID_DATE_RANGE`, `INVENTORY_ADJUSTMENT_FAILED`, and `INVENTORY_HISTORY_FAILED`. Database details are normalized by the existing API error middleware rather than returned as raw SQL errors.
+
+## Phase 9 — Supplier Management
+
+The protected `/admin/suppliers` workspace replaces the supplier placeholder with complete supplier CRUD, debounced search, status and city filters, allowlisted sorting, pagination, active supplier options, purchase relationship summaries, safe status changes, and guarded deletion. Phase 9 does not add purchase creation, supplier payments, a ledger, returns, sales, or reporting.
+
+### Actual supplier fields
+
+The existing schema provides `supplier_name`, `contact_person`, `email`, `phone`, `address`, `city`, `country`, `status`, `created_at`, and `updated_at`. Email has a database unique key; status supports only `active` and `inactive`. The current schema does not contain alternate phone, tax number, opening/current balance, or notes, so those fields and accounting values are not invented or exposed as editable controls.
+
+### Supplier API routes
+
+All routes require an authenticated administrator, and `/options` is registered before `/:id`:
+
+```http
+GET    /api/suppliers
+GET    /api/suppliers/options
+GET    /api/suppliers/:id
+POST   /api/suppliers
+PUT    /api/suppliers/:id
+PATCH  /api/suppliers/:id/status
+DELETE /api/suppliers/:id
+```
+
+The list accepts `page`, `limit`, `search`, `status`, `city`, `sortBy`, and `sortDirection`. Search covers every searchable field that actually exists. Sorting is restricted to supplier/contact fields, timestamps, purchase count, and total purchase amount. The options response contains lightweight active suppliers and distinct cities only.
+
+### Validation and normalization
+
+- Supplier name is required, trimmed, 2–150 characters, normalized for repeated spaces, and checked case-insensitively for uniqueness.
+- Contact person is optional and limited to 120 characters.
+- Optional email is normalized to lowercase, validated, limited to 150 characters, and checked against the existing unique email rule.
+- Optional phone is limited to 30 characters and accepts digits, spaces, plus, hyphen, and parentheses.
+- Address, city, and country are optional and limited to the existing schema sizes.
+- Blank optional strings become `null`; status defaults to `active` and is restricted to `active` or `inactive`.
+- `currentBalance` input is explicitly rejected. No balance state is simulated because balance columns do not exist.
+
+### Purchase summary and safe deletion
+
+The existing `purchases.supplier_id` relation and `purchases.total_amount` field are used in aggregate joins, avoiding N+1 queries. Supplier list/details return numeric `purchaseCount` and `totalPurchaseAmount`, using zero when no purchases exist. A supplier with linked purchases returns `409 SUPPLIER_IN_USE`; purchases are never cascade-deleted. Since the supplier table has no balance column, `SUPPLIER_BALANCE_NOT_ZERO` and opening-balance locking are not applicable in the current schema.
+
+Changing a supplier to inactive removes it from future active supplier options while preserving every existing purchase. The dashboard's supplier count remains database-driven and updates on its next load or refresh without polling.
+
+### Frontend module
+
+`SuppliersPage`, `useSuppliers`, and the supplier service keep API logic outside the page. Reusable supplier components provide filters, responsive tables, loading/empty/error states, a sectioned add/edit form, details and purchase summary, status confirmation, delete confirmation, pagination, refresh feedback, and safe backend error messages. Shared modal, form, badge, button, toast, pagination, and state components are reused.
+
+### Phase 9 testing
+
+1. Confirm anonymous supplier routes return `401` and authenticated list responses include pagination.
+2. Test search, status/city filters, every allowlisted sort, and rejection of an invalid sort.
+3. Create a supplier, verify blank/duplicate names, invalid email/phone, lowercase email normalization, and direct balance rejection.
+4. Update details and status; confirm inactive suppliers are excluded from `/options`.
+5. Verify details return purchase count and `SUM(total_amount)` as numbers.
+6. Confirm linked suppliers return `409 SUPPLIER_IN_USE`, while an unused supplier deletes successfully.
+7. Verify missing IDs return `404 SUPPLIER_NOT_FOUND` and existing auth, dashboard, category, company, medicine, inventory, and health APIs still work.
+8. Run `npm run lint` in `backend` and `npm run build` in `admin-panel`.
+
+Supplier error codes include `SUPPLIER_NOT_FOUND`, `SUPPLIER_ALREADY_EXISTS`, `SUPPLIER_EMAIL_EXISTS`, `SUPPLIER_IN_USE`, `SUPPLIER_CREATE_FAILED`, `SUPPLIER_UPDATE_FAILED`, and `SUPPLIER_DELETE_FAILED`. Balance/tax error codes become applicable only if a future non-destructive schema phase adds those concepts.

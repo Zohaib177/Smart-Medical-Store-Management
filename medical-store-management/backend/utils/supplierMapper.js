@@ -1,0 +1,6 @@
+function normalizeOptionalString(value) { if (value == null) return null; const normalized = String(value).trim(); return normalized || null; }
+function normalizePhone(value) { return normalizeOptionalString(value); }
+function normalizeEmail(value) { const email = normalizeOptionalString(value); return email ? email.toLowerCase() : null; }
+function mapSupplierInput(input) { return { supplier_name: String(input.supplierName || '').trim().replace(/\s+/g, ' '), contact_person: normalizeOptionalString(input.contactPerson), email: normalizeEmail(input.email), phone: normalizePhone(input.phone), address: normalizeOptionalString(input.address), city: normalizeOptionalString(input.city), country: normalizeOptionalString(input.country), status: input.status || 'active' }; }
+function mapSupplierRow(row) { if (!row) return null; return { id: row.id, supplierName: row.supplier_name, contactPerson: row.contact_person, email: row.email, phone: row.phone, address: row.address, city: row.city, country: row.country, status: row.status, purchaseCount: Number(row.purchase_count || 0), totalPurchaseAmount: Number(row.total_purchase_amount || 0), createdAt: row.created_at, updatedAt: row.updated_at }; }
+module.exports = { mapSupplierRow, mapSupplierInput, normalizeOptionalString, normalizePhone, normalizeEmail };

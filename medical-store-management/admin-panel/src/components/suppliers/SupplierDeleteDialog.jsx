@@ -1,0 +1,2 @@
+import ConfirmDialog from '../ui/ConfirmDialog';
+export default function SupplierDeleteDialog({supplier,isOpen,onClose,onConfirm,isDeleting}){return <ConfirmDialog isOpen={isOpen} onClose={onClose} onConfirm={onConfirm} title={`Delete “${supplier?.supplierName||'supplier'}”?`} description="Deletion is permanent. The supplier cannot be deleted while purchase records are linked. Existing purchases are never cascade-deleted." confirmLabel="Delete Supplier" variant="danger" isLoading={isDeleting}/>;}

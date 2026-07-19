@@ -1,0 +1,10 @@
+const express = require('express'); const authenticateAdmin = require('../middleware/authMiddleware'); const validateRequest = require('../middleware/validateRequest'); const controller = require('../controllers/supplierController'); const validators = require('../validators/supplierValidators');
+const router = express.Router(); router.use(authenticateAdmin);
+router.get('/', validators.listSuppliersValidator, validateRequest, controller.listSuppliers);
+router.get('/options', controller.getSupplierOptions);
+router.get('/:id', validators.supplierIdValidator, validateRequest, controller.getSupplier);
+router.post('/', validators.createSupplierValidator, validateRequest, controller.createSupplier);
+router.put('/:id', validators.supplierIdValidator, validators.updateSupplierValidator, validateRequest, controller.updateSupplier);
+router.patch('/:id/status', validators.supplierIdValidator, validators.updateSupplierStatusValidator, validateRequest, controller.updateSupplierStatus);
+router.delete('/:id', validators.supplierIdValidator, validateRequest, controller.deleteSupplier);
+module.exports = router;
