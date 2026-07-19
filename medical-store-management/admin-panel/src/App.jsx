@@ -8,7 +8,7 @@ import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import MedicinesPlaceholderPage from './pages/MedicinesPlaceholderPage';
 import CategoriesPage from './pages/CategoriesPage';
-import CompaniesPlaceholderPage from './pages/CompaniesPlaceholderPage';
+import CompaniesPage from './pages/CompaniesPage';
 import SuppliersPlaceholderPage from './pages/SuppliersPlaceholderPage';
 import PurchasesPlaceholderPage from './pages/PurchasesPlaceholderPage';
 import SalesPlaceholderPage from './pages/SalesPlaceholderPage';
@@ -38,7 +38,7 @@ function App() {
             <Route path="dashboard" element={<DashboardPage />} />
             <Route path="medicines" element={<MedicinesPlaceholderPage />} />
             <Route path="categories" element={<CategoriesPage />} />
-            <Route path="companies" element={<CompaniesPlaceholderPage />} />
+            <Route path="companies" element={<CompaniesPage />} />
             <Route path="suppliers" element={<SuppliersPlaceholderPage />} />
             <Route path="purchases" element={<PurchasesPlaceholderPage />} />
             <Route path="sales" element={<SalesPlaceholderPage />} />

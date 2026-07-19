@@ -349,3 +349,61 @@ The page includes:
 8. Confirm unused categories delete successfully and linked categories return HTTP `409` with `CATEGORY_IN_USE`.
 9. Confirm existing health, authentication, dashboard, and non-category admin routes continue to work.
 10. Run `npm run lint` in `backend` and `npm run build` in `admin-panel`.
+
+## Phase 6 — Medicine Companies Management
+
+Phase 6 replaces the company placeholder with a complete authenticated pharmaceutical-company management module. Administrators can search, filter, sort, paginate, create, view, edit, activate, deactivate, refresh, and safely delete companies.
+
+### Backend routes
+
+All company endpoints require an authenticated administrator:
+
+```http
+GET    /api/companies
+GET    /api/companies/:id
+POST   /api/companies
+PUT    /api/companies/:id
+PATCH  /api/companies/:id/status
+DELETE /api/companies/:id
+```
+
+The list endpoint supports `page`, `limit`, `search`, `status`, `sortBy`, and `sortDirection`. Search covers company name, contact person, email, phone, and address. Allowed sort fields are `company_name`, `contact_person`, `email`, `phone`, `status`, `created_at`, and `updated_at`. Medicine counts are returned through an aggregate query without N+1 requests.
+
+### Fields and validation
+
+- Company name is required, trimmed, normalized, 2–150 characters, and unique without regard to letter case.
+- Contact person is optional, trimmed, and limited to 120 characters.
+- Email is optional, lowercased, validated, and limited to 150 characters. The existing schema does not make email unique, so Phase 6 does not impose email uniqueness.
+- Phone is optional, limited to 30 characters, and permits numbers, spaces, plus, hyphen, and parentheses.
+- Address is optional, trimmed, and limited to 1000 characters.
+- Status is `active` or `inactive`; new companies default to `active`.
+- Pagination values are bounded and SQL sort columns are allowlisted.
+
+### Safe deletion and status
+
+Before physical deletion, the service counts medicines referencing the company. A linked company returns HTTP `409` with `COMPANY_IN_USE`; medicines are never cascade-deleted. Deactivation leaves existing medicine relationships unchanged while making the company unavailable for future active selections.
+
+Company error codes:
+
+- `COMPANY_NOT_FOUND`
+- `COMPANY_ALREADY_EXISTS`
+- `COMPANY_IN_USE`
+- `COMPANY_CREATE_FAILED`
+- `COMPANY_UPDATE_FAILED`
+- `COMPANY_DELETE_FAILED`
+
+Raw database errors are translated before reaching company API clients.
+
+### Frontend module
+
+The protected route is `/admin/companies`. The responsive page provides debounced search, filters, sorting, result count, refresh, pagination, add/edit forms, details, status confirmation, permanent-delete confirmation, loading skeletons, empty and retry states, and reusable toast feedback. Long email, phone, and address values are contained safely; full address information appears in the details modal.
+
+### Phase 6 testing
+
+1. Confirm unauthenticated company requests return HTTP `401`.
+2. Test pagination, search across every supported field, both statuses, and each sorting option.
+3. Test creation plus empty name, differently-cased duplicate name, invalid email, invalid phone characters, and overlong values.
+4. Test details, editing, duplicate-name editing, activation, and deactivation.
+5. Confirm unused companies delete successfully and linked companies return HTTP `409` with `COMPANY_IN_USE`.
+6. Confirm health, authentication, dashboard, categories, and other admin routes still work.
+7. Run `npm run lint` in `backend` and `npm run build` in `admin-panel`.
