@@ -1,0 +1,3 @@
+import { Pill } from 'lucide-react';
+import { useEffect, useState } from 'react';
+export default function MedicineImagePreview({ src, alt, className = 'h-11 w-11' }) { const [failed, setFailed] = useState(false); useEffect(() => setFailed(false), [src]); if (!src || failed) return <span className={`flex shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 ${className}`}><Pill className="h-5 w-5" aria-hidden="true" /></span>; return <img src={src} alt={alt} onError={() => setFailed(true)} className={`shrink-0 rounded-xl object-cover ring-1 ring-slate-200 ${className}`} />; }

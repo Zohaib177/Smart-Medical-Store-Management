@@ -6,7 +6,7 @@ import AdminLayout from './components/layout/AdminLayout';
 import SetupPage from './pages/SetupPage';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
-import MedicinesPlaceholderPage from './pages/MedicinesPlaceholderPage';
+import MedicinesPage from './pages/MedicinesPage';
 import CategoriesPage from './pages/CategoriesPage';
 import CompaniesPage from './pages/CompaniesPage';
 import SuppliersPlaceholderPage from './pages/SuppliersPlaceholderPage';
@@ -36,7 +36,7 @@ function App() {
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<DashboardPage />} />
-            <Route path="medicines" element={<MedicinesPlaceholderPage />} />
+            <Route path="medicines" element={<MedicinesPage />} />
             <Route path="categories" element={<CategoriesPage />} />
             <Route path="companies" element={<CompaniesPage />} />
             <Route path="suppliers" element={<SuppliersPlaceholderPage />} />

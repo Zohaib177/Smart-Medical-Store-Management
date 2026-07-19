@@ -407,3 +407,93 @@ The protected route is `/admin/companies`. The responsive page provides debounce
 5. Confirm unused companies delete successfully and linked companies return HTTP `409` with `COMPANY_IN_USE`.
 6. Confirm health, authentication, dashboard, categories, and other admin routes still work.
 7. Run `npm run lint` in `backend` and `npm run build` in `admin-panel`.
+
+## Phase 7 — Medicine Management
+
+Phase 7 replaces the medicine placeholder with a complete authenticated medicine-management module. Administrators can search, filter, sort, paginate, create, view, edit, activate, deactivate, refresh, and safely delete medicines while tracking pricing, stock, category, company, barcode, batch, and expiry information.
+
+### Database relationships and field mapping
+
+`medicines.category_id` references `medicine_categories.id` and `medicines.company_id` references `medicine_companies.id`. Both relations are required. New and normally edited medicines must reference active records.
+
+The API maps the existing `selling_price` column to `salePrice` and the existing `image` column to `imageUrl`. Image upload infrastructure is not installed, so Phase 7 accepts only an optional validated HTTP/HTTPS image URL. The schema has no `unit` column, so no unit value is stored or invented.
+
+### Backend routes
+
+All endpoints require an authenticated administrator. `/options` is registered before `/:id`.
+
+```http
+GET    /api/medicines
+GET    /api/medicines/options
+GET    /api/medicines/:id
+POST   /api/medicines
+PUT    /api/medicines/:id
+PATCH  /api/medicines/:id/status
+DELETE /api/medicines/:id
+```
+
+The list endpoint supports `page`, `limit`, `search`, `status`, `categoryId`, `companyId`, `stockStatus`, `expiryStatus`, `sortBy`, and `sortDirection`. Search covers medicine name, generic name, barcode, batch, description, category name, and company name. Joins avoid N+1 relation queries.
+
+### Validation and business rules
+
+- Medicine name is required, normalized, and limited to 2–150 characters.
+- Category and company IDs are required, must exist, and must be active.
+- Generic name, batch, barcode, dosage form, and strength are optional and length-limited according to the schema.
+- Blank barcode values become `null`; provided barcodes are unique.
+- Purchase and sale prices are non-negative and limited to two decimal places.
+- Sale price cannot be lower than purchase price.
+- Stock and minimum stock are non-negative integers.
+- Manufacturing and expiry values are ISO dates; expiry must be later than manufacturing date.
+- New expired medicines are rejected. An existing expired record can be edited when its expired date is unchanged.
+- Prescription requirement is stored as a boolean-compatible value.
+- Admin-managed status is `active` or `inactive`. Stock status is derived rather than written to the legacy `out_of_stock` enum value.
+- Image URL is optional, HTTP/HTTPS only, and limited to the existing 255-character column.
+
+### Derived stock and expiry states
+
+Stock status is not stored:
+
+- `outOfStock`: quantity is zero or below
+- `lowStock`: quantity is above zero and at or below minimum stock
+- `inStock`: quantity is above minimum stock
+
+Expiry status is calculated with MySQL's current calendar date:
+
+- `expired`: expiry date is before today
+- `expiringSoon`: today through the following 30 days
+- `valid`: more than 30 days away
+- `unknown`: no expiry date
+
+`daysUntilExpiry` is negative for expired stock, zero for today, positive for future dates, and `null` without an expiry date.
+
+### Options and safe deletion
+
+`GET /api/medicines/options` returns alphabetized active categories and companies plus allowed statuses. Before deletion, the service checks `purchase_items`, `sale_items`, and `inventory_logs`. Any linked transaction returns HTTP `409` with `MEDICINE_IN_USE`; transaction data is never cascade-deleted.
+
+Medicine error codes include:
+
+- `MEDICINE_NOT_FOUND`
+- `MEDICINE_BARCODE_EXISTS`
+- `MEDICINE_IN_USE`
+- `INVALID_CATEGORY` / `CATEGORY_INACTIVE`
+- `INVALID_COMPANY` / `COMPANY_INACTIVE`
+- `INVALID_PRICE_RANGE`
+- `INVALID_EXPIRY_DATE`
+- `MEDICINE_CREATE_FAILED`
+- `MEDICINE_UPDATE_FAILED`
+- `MEDICINE_DELETE_FAILED`
+
+### Frontend module
+
+The protected route is `/admin/medicines`. The page provides debounced search, six filter/sort controls, result count, refresh, pagination, a sectioned create/edit form, category/company options, image preview, details, status and delete confirmation, stock and expiry badges, loading skeletons, empty/error states, and toast feedback. The wide table is contained within its card so it does not create page-level horizontal overflow.
+
+### Phase 7 testing
+
+1. Verify unauthenticated medicine requests return HTTP `401` and options contain only active relations.
+2. Test search plus status, category, company, stock, and expiry filters and all allowlisted sorts.
+3. Test valid creation and joined details with numeric prices/counts and derived statuses.
+4. Test invalid/missing relations, inactive relations, duplicate barcodes, negative values, price range, decimal precision, date order, and expired-date rules.
+5. Test updates with the same barcode, activation/deactivation, and editing unchanged expired records.
+6. Confirm unused medicines delete and linked medicines return HTTP `409 MEDICINE_IN_USE`.
+7. Confirm categories, companies, dashboard, authentication, and health routes still work.
+8. Run `npm run lint` in `backend` and `npm run build` in `admin-panel`.
