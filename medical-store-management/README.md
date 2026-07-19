@@ -497,3 +497,57 @@ The protected route is `/admin/medicines`. The page provides debounced search, s
 6. Confirm unused medicines delete and linked medicines return HTTP `409 MEDICINE_IN_USE`.
 7. Confirm categories, companies, dashboard, authentication, and health routes still work.
 8. Run `npm run lint` in `backend` and `npm run build` in `admin-panel`.
+
+## Phase 8 — Inventory Management
+
+Phase 8 replaces the inventory placeholder at `/admin/inventory` with a protected inventory workspace. It provides live summary cards, current-stock and audit-history tabs, debounced search, allowlisted filters and sorting, pagination, current-page CSV export, manual stock adjustment, and medicine-specific paginated history. It does not add purchases, sales, suppliers, barcode scanning, or multi-store behavior.
+
+### Inventory API routes
+
+All routes require an authenticated administrator:
+
+```http
+GET  /api/inventory
+GET  /api/inventory/summary
+GET  /api/inventory/history
+GET  /api/inventory/medicines/:medicineId/history
+POST /api/inventory/medicines/:medicineId/adjust
+```
+
+The inventory list supports `page`, `limit`, `search`, `status`, `categoryId`, `companyId`, `stockStatus`, `expiryStatus`, `sortBy`, and `sortDirection`. History supports pagination, search, medicine, transaction type, administrator, inclusive date range, and sort direction filters. Dates are validated and `dateFrom` cannot be later than `dateTo`.
+
+### Stock adjustments and transaction safety
+
+Manual types are `stockIn`, `stockOut`, and `correction`, stored as `stock_in`, `stock_out`, and `correction`. Stock-in adds a positive whole number, stock-out subtracts a positive whole number, and correction sets an exact non-negative quantity. A 3–255 character reason is required; notes are optional up to 1000 characters.
+
+The service starts one MySQL transaction, selects the medicine with `SELECT ... FOR UPDATE`, reads the authoritative quantity, calculates the signed change, rejects negative stock, updates `medicines.stock_quantity`, and inserts the audit log before committing. Any failure rolls both writes back. The authenticated `req.admin.id` is recorded; an administrator ID from the request body is never accepted.
+
+`inventory_logs` retains its original `quantity`, `remaining_stock`, `remarks`, and legacy transaction types. The non-destructive Phase 8 migration adds `admin_id`, `quantity_change`, `previous_quantity`, `new_quantity`, `reference_type`, `reference_id`, `reason`, and `notes`, plus administrator and transaction-type indexes. The migration is [database/phase_8_inventory_management.sql](database/phase_8_inventory_management.sql).
+
+### Inventory summary
+
+- Total medicines counts all catalog records.
+- Total stock units sums `stock_quantity` and returns zero rather than null.
+- In stock means quantity is above `minimum_stock`.
+- Low stock means quantity is positive and at or below `minimum_stock`.
+- Out of stock means quantity is zero or below.
+- Expired means the expiry date is before today.
+- Expiring soon means today through 30 days from today, so expired records are excluded.
+- Inventory cost value is `SUM(stock_quantity * purchase_price)`; no sales value is invented.
+
+### Frontend components
+
+`InventoryPage` uses `useInventory` and the shared UI system. Its inventory components include summary cards, inventory/history filters and tables, stock/expiry and transaction badges, signed stock-change display, a two-step adjustment modal with live preview, and a medicine-history modal. The backend remains authoritative for all preview calculations.
+
+### Phase 8 testing
+
+1. Apply `database/phase_8_inventory_management.sql` once to an existing Phase 1 database, then restart the backend.
+2. Confirm anonymous inventory requests return `401` and authenticated list, summary, history, and medicine-history responses include pagination where applicable.
+3. Exercise every search/filter/sort allowlist and verify an invalid date range returns `422 INVALID_DATE_RANGE`.
+4. Verify stock-in, stock-out, and positive/negative/zero corrections produce correct previous, change, and new quantities.
+5. Verify stock-out beyond current quantity returns `409 INSUFFICIENT_STOCK`; negative input, missing reason, and invalid types return validation errors.
+6. Confirm the medicine update and audit insert commit together, failed inserts roll back, the locked row prevents lost concurrent updates, and the logged administrator matches the authenticated session.
+7. Check auth, dashboard, category, company, and medicine routes for regressions.
+8. Run `npm run lint` in `backend` and `npm run build` in `admin-panel`.
+
+Inventory errors include `MEDICINE_NOT_FOUND`, `INVALID_TRANSACTION_TYPE`, `INVALID_ADJUSTMENT_QUANTITY`, `INSUFFICIENT_STOCK`, `NEGATIVE_STOCK_NOT_ALLOWED`, `INVALID_DATE_RANGE`, `INVENTORY_ADJUSTMENT_FAILED`, and `INVENTORY_HISTORY_FAILED`. Database details are normalized by the existing API error middleware rather than returned as raw SQL errors.

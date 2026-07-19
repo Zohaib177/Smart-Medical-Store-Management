@@ -12,7 +12,7 @@ import CompaniesPage from './pages/CompaniesPage';
 import SuppliersPlaceholderPage from './pages/SuppliersPlaceholderPage';
 import PurchasesPlaceholderPage from './pages/PurchasesPlaceholderPage';
 import SalesPlaceholderPage from './pages/SalesPlaceholderPage';
-import InventoryPlaceholderPage from './pages/InventoryPlaceholderPage';
+import InventoryPage from './pages/InventoryPage';
 import CustomersPlaceholderPage from './pages/CustomersPlaceholderPage';
 import ReportsPlaceholderPage from './pages/ReportsPlaceholderPage';
 import SettingsPlaceholderPage from './pages/SettingsPlaceholderPage';
@@ -42,7 +42,7 @@ function App() {
             <Route path="suppliers" element={<SuppliersPlaceholderPage />} />
             <Route path="purchases" element={<PurchasesPlaceholderPage />} />
             <Route path="sales" element={<SalesPlaceholderPage />} />
-            <Route path="inventory" element={<InventoryPlaceholderPage />} />
+            <Route path="inventory" element={<InventoryPage />} />
             <Route path="customers" element={<CustomersPlaceholderPage />} />
             <Route path="reports" element={<ReportsPlaceholderPage />} />
             <Route path="settings" element={<SettingsPlaceholderPage />} />
