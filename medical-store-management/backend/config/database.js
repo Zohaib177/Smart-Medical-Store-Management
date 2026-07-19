@@ -1,15 +1,17 @@
 const mysql = require('mysql2/promise');
-require('dotenv').config();
+const config = require('./environment');
 
 const pool = mysql.createPool({
-  host: process.env.DB_HOST || 'localhost',
-  port: Number(process.env.DB_PORT) || 3306,
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'medical_store_db',
+  host: config.database.host,
+  port: config.database.port,
+  user: config.database.user,
+  password: config.database.password,
+  database: config.database.name,
   waitForConnections: true,
-  connectionLimit: 10,
+  connectionLimit: config.database.connectionLimit,
   queueLimit: 0,
+  enableKeepAlive: true,
+  charset: 'utf8mb4_unicode_ci',
 });
 
 async function testDatabaseConnection() {
@@ -26,7 +28,12 @@ async function testDatabaseConnection() {
   }
 }
 
+async function closeDatabasePool() {
+  await pool.end();
+}
+
 module.exports = {
   pool,
   testDatabaseConnection,
+  closeDatabasePool,
 };

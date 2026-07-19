@@ -1,10 +1,8 @@
 const http = require('http');
-require('dotenv').config();
-
+const config = require('./config/environment');
 const app = require('./app');
-const { pool, testDatabaseConnection } = require('./config/database');
+const { testDatabaseConnection, closeDatabasePool } = require('./config/database');
 
-const port = process.env.PORT || 5000;
 let server;
 
 async function startServer() {
@@ -16,8 +14,8 @@ async function startServer() {
     }
 
     server = http.createServer(app);
-    server.listen(port, () => {
-      console.log(`Medical Store API running on port ${port}`);
+    server.listen(config.port, () => {
+      console.log(`Medical Store API running on port ${config.port}`);
     });
   } catch (error) {
     console.error('Startup error:', error.message);
@@ -26,23 +24,29 @@ async function startServer() {
 }
 
 function gracefulShutdown(signal) {
-  return () => {
+  return async () => {
     console.log(`Received ${signal}. Shutting down gracefully...`);
     if (server) {
-      server.close(() => {
-        pool.end().then(() => {
-          process.exit(0);
-        });
-      });
-    } else {
-      pool.end().then(() => {
+      server.close(async () => {
+        await closeDatabasePool();
         process.exit(0);
       });
+    } else {
+      await closeDatabasePool();
+      process.exit(0);
     }
   };
 }
 
 process.on('SIGINT', gracefulShutdown('SIGINT'));
 process.on('SIGTERM', gracefulShutdown('SIGTERM'));
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught exception:', error.message);
+  process.exit(1);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled rejection:', reason instanceof Error ? reason.message : reason);
+  process.exit(1);
+});
 
 startServer();
