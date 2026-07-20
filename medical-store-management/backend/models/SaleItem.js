@@ -1,17 +1,3 @@
-const BaseModel = require('./BaseModel');
-
-class SaleItem extends BaseModel {
-  constructor() {
-    super({
-      tableName: 'sale_items',
-      primaryKey: 'id',
-      allowedFields: ['sale_id', 'medicine_id', 'quantity', 'unit_price', 'subtotal'],
-      searchableFields: ['sale_id', 'medicine_id'],
-      sortableFields: ['id', 'sale_id', 'medicine_id', 'created_at'],
-      defaultSortColumn: 'created_at',
-      defaultSortDirection: 'DESC',
-    });
-  }
-}
-
-module.exports = new SaleItem();
+const BaseModel=require('./BaseModel');const{executeQuery}=require('../services/databaseService');const{mapSaleItemRow}=require('../utils/saleMapper');
+class SaleItem extends BaseModel{constructor(){super({tableName:'sale_items',primaryKey:'id',allowedFields:['sale_id','medicine_id','quantity','unit_price','subtotal'],searchableFields:['sale_id','medicine_id'],sortableFields:['created_at'],defaultSortColumn:'created_at',defaultSortDirection:'DESC'});}async createMany(saleId,items,c){for(const i of items)await c.execute('INSERT INTO sale_items (sale_id,medicine_id,quantity,unit_price,subtotal) VALUES (?,?,?,?,?)',[saleId,i.medicineId,i.quantity,i.unitSalePrice,i.subtotal]);}async findBySaleId(id,c=null){const sql='SELECT si.*,m.medicine_name,m.generic_name,m.barcode,m.batch_number,m.strength,m.dosage_form FROM sale_items si JOIN medicines m ON m.id=si.medicine_id WHERE si.sale_id=? ORDER BY si.id';const rows=c?(await c.execute(sql,[id]))[0]:await executeQuery(sql,[id]);return rows.map(mapSaleItemRow);}}
+module.exports=new SaleItem();

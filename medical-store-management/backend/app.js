@@ -15,6 +15,7 @@ const medicineRoutes = require('./routes/medicineRoutes');
 const inventoryRoutes = require('./routes/inventoryRoutes');
 const supplierRoutes = require('./routes/supplierRoutes');
 const purchaseRoutes = require('./routes/purchaseRoutes');
+const saleRoutes = require('./routes/saleRoutes');
 const developmentRoutes = require('./routes/developmentRoutes');
 const notFound = require('./middleware/notFound');
 const errorHandler = require('./middleware/errorHandler');
@@ -66,6 +67,7 @@ app.use(`${config.apiPrefix}/medicines`, medicineRoutes);
 app.use(`${config.apiPrefix}/inventory`, inventoryRoutes);
 app.use(`${config.apiPrefix}/suppliers`, supplierRoutes);
 app.use(`${config.apiPrefix}/purchases`, purchaseRoutes);
+app.use(`${config.apiPrefix}/sales`, saleRoutes);
 
 if (config.isDevelopment) {
   app.use(`${config.apiPrefix}/dev`, developmentRoutes);

@@ -16,6 +16,16 @@ class Customer extends BaseModel {
   async findByPhone(phone) {
     return this.findOneBy('phone', phone);
   }
+
+  async getSaleOptions() {
+    const { executeQuery } = require('../services/databaseService');
+    return executeQuery('SELECT id,customer_name AS customerName,phone,email FROM customers ORDER BY customer_name ASC LIMIT 500');
+  }
+
+  async findByIdForUpdate(id, connection) {
+    const [rows] = await connection.execute('SELECT id,customer_name,phone,email FROM customers WHERE id=? FOR UPDATE', [id]);
+    return rows[0] || null;
+  }
 }
 
 module.exports = new Customer();

@@ -24,6 +24,8 @@
   .purchase-invoice table { page-break-inside: auto; }
   .purchase-invoice tr { page-break-inside: avoid; page-break-after: auto; }
   .no-print { display: none !important; }
+  .sale-receipt, .sale-receipt * { visibility: visible !important; }
+  .sale-receipt { position: absolute !important; inset: 0 !important; width: 100% !important; max-width: none !important; padding: 0 !important; color: #0f172a !important; }
 }
 
 body {

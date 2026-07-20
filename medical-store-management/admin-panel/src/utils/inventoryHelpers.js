@@ -12,7 +12,7 @@ export function calculateNewStock(current, quantity, type) {
   return amount;
 }
 export function calculateQuantityChange(current, quantity, type) { return calculateNewStock(current, quantity, type) - (Number(current) || 0); }
-export function getTransactionTypeLabel(type) { return transactionTypes.find((item) => item.value === type)?.label || type; }
+export function getTransactionTypeLabel(type) { return transactionTypes.find((item) => item.value === type)?.label || ({purchase:'Purchase',purchaseCancellation:'Purchase Cancellation',sale:'Sale',saleCancellation:'Sale Cancellation'}[type] || type); }
 export function getTransactionTypeDescription(type) { return ({ stockIn: 'Adds units to current stock.', stockOut: 'Removes units from current stock.', correction: 'Sets stock to an exact counted quantity.' }[type] || ''); }
 export function formatStockChange(value) { const number = Number(value) || 0; return number > 0 ? `+${number}` : String(number); }
 export function validateStockAdjustment(values, currentStock) {

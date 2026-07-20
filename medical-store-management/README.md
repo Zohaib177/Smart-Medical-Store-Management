@@ -645,3 +645,43 @@ Cancellation never deletes a purchase. It locks the completed purchase and medic
 Apply the Phase 10 migration once to an existing Phase 1-9 database, restart the backend, then run `npm run lint` in `backend` and `npm run build` in `admin-panel`. Verify anonymous purchase requests return `401`; authenticated list/options/summary/details; all filters and allowlisted sorts; invalid dates and purchase values; duplicate invoice/medicine rejection; server-side total recalculation; unique numbers; stock/log creation; transactional rollback; successful and insufficient-stock cancellation; retained cancelled details; and regressions across auth, health, dashboard, supplier, medicine, and inventory routes.
 
 Purchase errors include `PURCHASE_NOT_FOUND`, `PURCHASE_INVOICE_EXISTS`, `DUPLICATE_PURCHASE_MEDICINE`, `INVALID_PURCHASE_DATE`, `INVALID_PURCHASE_ITEMS`, `INVALID_PURCHASE_QUANTITY`, `INVALID_PURCHASE_PRICE`, `INVALID_EXPIRY_DATE`, `INVALID_DISCOUNT`, `INVALID_PAID_AMOUNT`, `PURCHASE_CANCELLATION_STOCK_CONFLICT`, `PURCHASE_ALREADY_CANCELLED`, `PURCHASE_CREATE_FAILED`, and `PURCHASE_CANCEL_FAILED`. Database errors remain normalized by the existing API error middleware.
+
+## Phase 11 - Sales and POS Management
+
+Phase 11 replaces the sales placeholder and adds a protected professional POS workspace. It provides server-side medicine/barcode/batch search, category filtering, a stock-capped cart, customer or walk-in checkout, payment calculation, transactional invoice creation, sales history, summary cards, details, receipt printing, and audited cancellation. It does not add returns, refunds, customer ledgers, prescriptions, insurance, loyalty, reports, hardware scanning, or multi-store/register workflows.
+
+### Actual schema and calculations
+
+The migration is [database/phase_11_sales_pos.sql](database/phase_11_sales_pos.sql). Existing `sales.total_amount`, `discount`, `tax`, and `grand_total` represent subtotal, discount amount, tax amount, and final total. Existing `sale_items.unit_price` stores the locked current `medicines.selling_price`. The migration adds the unique internal sale number, paid/due/received/change amounts, sale status, notes, creator, and cancellation audit fields. It also adds the separate `sale_cancellation` inventory transaction type.
+
+For each item, `subtotal = quantity * current medicine selling price`. Invoice `grand total = subtotal - discount + tax`. The backend rejects discount above subtotal, reads current prices rather than client prices, and recalculates every value. Cash change is `received - total`; card and online/mobile payments have zero change.
+
+The current customer table has no status or `current_balance`. Existing customers are selectable and walk-in is the default, but credit, partial, and unpaid sales are rejected. Supported payment methods follow the actual sales ENUM: `cash`, `card`, and `online`; the UI labels online as online/mobile payment. Payment status is backend-derived and is currently `paid` for every valid checkout.
+
+### Protected APIs and frontend routes
+
+```http
+GET   /api/sales
+GET   /api/sales/summary
+GET   /api/sales/options
+GET   /api/sales/medicines
+GET   /api/sales/:id
+POST  /api/sales
+PATCH /api/sales/:id/cancel
+```
+
+Frontend routes are `/admin/sales` and `/admin/pos`. Medicine search is debounced, Enter supports immediate barcode lookup, and expired/out-of-stock records are excluded. Expiring-soon and unknown-expiry medicines remain visible with warnings. No camera or scanner package is installed.
+
+### Transaction, expiry, inventory, and cancellation
+
+Sale creation locks an optional customer and all medicine rows in ascending ID order, merges duplicate medicine IDs, verifies active status/latest stock/expiry/latest selling price, inserts the sale and items, deducts stock, and writes one authenticated negative `sale` log per item before commit. Sale numbers use `SAL-YYYYMMDD-000001`, with the suffix derived from the inserted database ID rather than `COUNT(*)`.
+
+An expired medicine (`expiry_date < CURRENT_DATE`) is blocked; unknown expiry is allowed with a warning, and medicines expiring within 30 days can be sold with a warning. Stock is checked again inside the transaction, so concurrent requests cannot oversell a locked medicine.
+
+Cancellation never deletes a sale. It locks the completed invoice and related medicines, restores each quantity, creates positive `sale_cancellation` logs, and records status, administrator, time, and reason atomically. A second cancellation returns `409 SALE_ALREADY_CANCELLED`; cancelled invoices and items remain available for audit and printing.
+
+### Testing
+
+Apply the Phase 11 migration once, restart the backend, run `npm run lint` in `backend`, and run `npm run build` in `admin-panel`. Test authentication, list pagination/search/filters/sorts/date validation, summary numbers, active POS options, barcode/category search, expired exclusion, server-price authority, duplicate merging, invalid quantities, stock conflicts, cash received/change, credit rejection, transaction rollback, sale and reversal logs, cancellation, retained cancelled details, receipt printing, responsive layouts, and regressions across health/auth/dashboard/medicine/inventory/supplier/purchase routes.
+
+Sale errors include `SALE_NOT_FOUND`, `SALE_ALREADY_CANCELLED`, `INVALID_DATE_RANGE`, `INVALID_SALE_DATE`, `INVALID_SALE_ITEMS`, `INVALID_SALE_QUANTITY`, `MEDICINE_NOT_FOUND`, `MEDICINE_INACTIVE`, `MEDICINE_EXPIRED`, `INSUFFICIENT_STOCK`, `INVALID_DISCOUNT`, `INVALID_PAID_AMOUNT`, `INVALID_PAYMENT_METHOD`, `INSUFFICIENT_RECEIVED_AMOUNT`, `CREDIT_SALES_NOT_SUPPORTED`, `CUSTOMER_NOT_FOUND`, `SALE_CREATE_FAILED`, and `SALE_CANCEL_FAILED`.

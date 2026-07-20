@@ -1,21 +1,17 @@
 const BaseModel = require('./BaseModel');
+const { executeQuery, executeSingle } = require('../services/databaseService');
+const { normalizePagination, calculateOffset, buildPaginationMetadata } = require('../utils/pagination');
+const { mapSaleRow } = require('../utils/saleMapper');
 
 class Sale extends BaseModel {
-  constructor() {
-    super({
-      tableName: 'sales',
-      primaryKey: 'id',
-      allowedFields: ['customer_id', 'invoice_number', 'sale_date', 'total_amount', 'discount', 'tax', 'grand_total', 'payment_method', 'payment_status'],
-      searchableFields: ['invoice_number'],
-      sortableFields: ['id', 'sale_date', 'invoice_number', 'grand_total', 'created_at', 'updated_at'],
-      defaultSortColumn: 'sale_date',
-      defaultSortDirection: 'DESC',
-    });
-  }
-
-  async findByInvoiceNumber(invoiceNumber) {
-    return this.findOneBy('invoice_number', invoiceNumber);
-  }
+  constructor() { super({ tableName: 'sales', primaryKey: 'id', allowedFields: ['customer_id','invoice_number','sale_date','total_amount','discount','tax','grand_total','paid_amount','due_amount','received_amount','change_amount','payment_method','payment_status','sale_status','notes','created_by'], searchableFields: ['sale_number','invoice_number','notes'], sortableFields: ['sale_number','sale_date','total_amount','grand_total','paid_amount','due_amount','payment_method','payment_status','sale_status','created_at','updated_at'], defaultSortColumn: 'created_at', defaultSortDirection: 'DESC' }); }
+  buildFilters(o={}) { const w=[],v=[]; if(o.search){const s=`%${String(o.search).trim()}%`;w.push('(s.sale_number LIKE ? OR s.invoice_number LIKE ? OR c.customer_name LIKE ? OR c.phone LIKE ? OR a.full_name LIKE ? OR EXISTS (SELECT 1 FROM sale_items xsi JOIN medicines xm ON xm.id=xsi.medicine_id WHERE xsi.sale_id=s.id AND (xm.medicine_name LIKE ? OR xm.barcode LIKE ?)))');v.push(...Array(7).fill(s));} if(o.customerId){w.push('s.customer_id=?');v.push(o.customerId);} if(o.paymentMethod){w.push('s.payment_method=?');v.push(o.paymentMethod);} if(o.paymentStatus){w.push('s.payment_status=?');v.push(o.paymentStatus);} if(o.saleStatus){w.push('s.sale_status=?');v.push(o.saleStatus);} if(o.dateFrom){w.push('s.sale_date>=?');v.push(o.dateFrom);} if(o.dateTo){w.push('s.sale_date<=?');v.push(o.dateTo);} return {where:w.length?`WHERE ${w.join(' AND ')}`:'',values:v}; }
+  async findAllWithSummary(o={}) { const {page,limit}=normalizePagination(o.page,o.limit),offset=calculateOffset(page,limit),{where,values}=this.buildFilters(o); const sorts={sale_number:'s.sale_number',sale_date:'s.sale_date',subtotal:'s.total_amount',total_amount:'s.grand_total',paid_amount:'s.paid_amount',due_amount:'s.due_amount',payment_method:'s.payment_method',payment_status:'s.payment_status',sale_status:'s.sale_status',created_at:'s.created_at',updated_at:'s.updated_at'}; const sort=sorts[o.sortBy]||sorts.created_at,dir=String(o.sortDirection).toLowerCase()==='asc'?'ASC':'DESC'; const joins='LEFT JOIN customers c ON c.id=s.customer_id LEFT JOIN admins a ON a.id=s.created_by LEFT JOIN (SELECT sale_id,COUNT(*) item_count,COALESCE(SUM(quantity),0) total_quantity FROM sale_items GROUP BY sale_id) x ON x.sale_id=s.id'; const rows=await executeQuery(`SELECT s.*,c.customer_name,c.phone customer_phone,a.full_name admin_name,COALESCE(x.item_count,0)item_count,COALESCE(x.total_quantity,0)total_quantity FROM sales s ${joins} ${where} ORDER BY ${sort} ${dir} LIMIT ${limit} OFFSET ${offset}`,values); const count=await executeSingle(`SELECT COUNT(*) totalRecords FROM sales s LEFT JOIN customers c ON c.id=s.customer_id LEFT JOIN admins a ON a.id=s.created_by ${where}`,values); return {data:rows.map(mapSaleRow),pagination:buildPaginationMetadata(page,limit,Number(count?.totalRecords||0))}; }
+  async findByIdWithRelations(id,connection=null) { const sql='SELECT s.*,c.customer_name,c.phone customer_phone,c.email customer_email,c.address customer_address,a.full_name admin_name,a.email admin_email,ca.full_name cancelled_by_name FROM sales s LEFT JOIN customers c ON c.id=s.customer_id LEFT JOIN admins a ON a.id=s.created_by LEFT JOIN admins ca ON ca.id=s.cancelled_by WHERE s.id=?'; const row=connection?(await connection.execute(sql,[id]))[0][0]:await executeSingle(sql,[id]); return mapSaleRow(row); }
+  async findByIdForUpdate(id,c) { const [rows]=await c.execute('SELECT * FROM sales WHERE id=? FOR UPDATE',[id]); return rows[0]||null; }
+  async createSale(data,c) { const fields=Object.keys(data); const [result]=await c.execute(`INSERT INTO sales (${fields.join(',')}) VALUES (${fields.map(()=>'?').join(',')})`,fields.map(k=>data[k])); return result.insertId; }
+  async finalizeNumber(id,number,c) { await c.execute('UPDATE sales SET sale_number=?,invoice_number=? WHERE id=?',[number,number,id]); }
+  async cancel(id,adminId,reason,c) { await c.execute("UPDATE sales SET sale_status='cancelled',cancelled_by=?,cancelled_at=CURRENT_TIMESTAMP,cancellation_reason=? WHERE id=?",[adminId,reason,id]); }
+  async getSummary() { const r=await executeSingle(`SELECT COUNT(*) totalSales,COALESCE(SUM(sale_status='completed'),0) completedSales,COALESCE(SUM(sale_status='cancelled'),0) cancelledSales,COALESCE(SUM(CASE WHEN sale_status='completed' THEN grand_total ELSE 0 END),0) totalSalesAmount,COALESCE(SUM(CASE WHEN sale_status='completed' THEN paid_amount ELSE 0 END),0) totalPaidAmount,COALESCE(SUM(CASE WHEN sale_status='completed' THEN due_amount ELSE 0 END),0) totalDueAmount,COALESCE(SUM(sale_status='completed' AND sale_date=CURRENT_DATE),0) todaySalesCount,COALESCE(SUM(CASE WHEN sale_status='completed' AND sale_date=CURRENT_DATE THEN grand_total ELSE 0 END),0) todaySalesAmount FROM sales`); const out=Object.fromEntries(Object.entries(r||{}).map(([k,v])=>[k,Number(v||0)])); return {...out,todayProfitEstimate:0}; }
 }
-
 module.exports = new Sale();
