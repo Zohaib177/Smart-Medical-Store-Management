@@ -10,7 +10,8 @@ import MedicinesPage from './pages/MedicinesPage';
 import CategoriesPage from './pages/CategoriesPage';
 import CompaniesPage from './pages/CompaniesPage';
 import SuppliersPage from './pages/SuppliersPage';
-import PurchasesPlaceholderPage from './pages/PurchasesPlaceholderPage';
+import PurchasesPage from './pages/PurchasesPage';
+import CreatePurchasePage from './pages/CreatePurchasePage';
 import SalesPlaceholderPage from './pages/SalesPlaceholderPage';
 import InventoryPage from './pages/InventoryPage';
 import CustomersPlaceholderPage from './pages/CustomersPlaceholderPage';
@@ -40,7 +41,8 @@ function App() {
             <Route path="categories" element={<CategoriesPage />} />
             <Route path="companies" element={<CompaniesPage />} />
             <Route path="suppliers" element={<SuppliersPage />} />
-            <Route path="purchases" element={<PurchasesPlaceholderPage />} />
+            <Route path="purchases" element={<PurchasesPage />} />
+            <Route path="purchases/new" element={<CreatePurchasePage />} />
             <Route path="sales" element={<SalesPlaceholderPage />} />
             <Route path="inventory" element={<InventoryPage />} />
             <Route path="customers" element={<CustomersPlaceholderPage />} />

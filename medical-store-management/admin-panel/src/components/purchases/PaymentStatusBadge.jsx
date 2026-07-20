@@ -1,0 +1,1 @@
+import Badge from '../ui/Badge';import{getPaymentStatusLabel}from'../../utils/purchaseHelpers';export default function PaymentStatusBadge({status}){return <Badge variant={status==='paid'?'success':status==='partial'?'warning':'danger'}>{getPaymentStatusLabel(status)}</Badge>}

@@ -53,6 +53,7 @@ class Supplier extends BaseModel {
   }
 
   async findByNameInsensitive(name) { return executeSingle('SELECT * FROM suppliers WHERE LOWER(supplier_name)=LOWER(?) LIMIT 1', [name]); }
+  async findByIdForUpdate(id, connection) { const [rows] = await connection.execute('SELECT * FROM suppliers WHERE id=? FOR UPDATE',[id]); return rows[0] || null; }
   async existsByNameInsensitive(name, excludeId = null) { const sql = excludeId ? 'SELECT 1 FROM suppliers WHERE LOWER(supplier_name)=LOWER(?) AND id<>? LIMIT 1' : 'SELECT 1 FROM suppliers WHERE LOWER(supplier_name)=LOWER(?) LIMIT 1'; return Boolean(await executeSingle(sql, excludeId ? [name, excludeId] : [name])); }
   async findByEmail(email, excludeId = null) { if (!email) return null; const sql = excludeId ? 'SELECT id FROM suppliers WHERE LOWER(email)=LOWER(?) AND id<>? LIMIT 1' : 'SELECT id FROM suppliers WHERE LOWER(email)=LOWER(?) LIMIT 1'; return executeSingle(sql, excludeId ? [email, excludeId] : [email]); }
   async createSupplier(data, connection = null) { const executor = connection ? async (sql, params) => (await connection.execute(sql, params))[0] : executeQuery; const fields = Object.keys(data); const result = await executor(`INSERT INTO suppliers (${fields.join(',')}) VALUES (${fields.map(() => '?').join(',')})`, fields.map((field) => data[field])); return this.findByIdWithSummary(result.insertId); }

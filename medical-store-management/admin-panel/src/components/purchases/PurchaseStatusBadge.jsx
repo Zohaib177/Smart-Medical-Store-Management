@@ -1,0 +1,1 @@
+import Badge from '../ui/Badge';import{CheckCircle2,XCircle}from'lucide-react';export default function PurchaseStatusBadge({status}){const ok=status==='completed',Icon=ok?CheckCircle2:XCircle;return <Badge variant={ok?'success':'neutral'}><Icon className="mr-1 h-3.5 w-3.5"/>{ok?'Completed':'Cancelled'}</Badge>}

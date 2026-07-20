@@ -1,21 +1,16 @@
-const BaseModel = require('./BaseModel');
-
-class Purchase extends BaseModel {
-  constructor() {
-    super({
-      tableName: 'purchases',
-      primaryKey: 'id',
-      allowedFields: ['supplier_id', 'purchase_date', 'invoice_number', 'total_amount', 'payment_status', 'remarks'],
-      searchableFields: ['invoice_number', 'remarks'],
-      sortableFields: ['id', 'purchase_date', 'invoice_number', 'total_amount', 'created_at', 'updated_at'],
-      defaultSortColumn: 'purchase_date',
-      defaultSortDirection: 'DESC',
-    });
-  }
-
-  async findByInvoiceNumber(invoiceNumber) {
-    return this.findOneBy('invoice_number', invoiceNumber);
-  }
+const BaseModel=require('./BaseModel');const{executeQuery,executeSingle}=require('../services/databaseService');const{normalizePagination,calculateOffset,buildPaginationMetadata}=require('../utils/pagination');const{mapPurchaseRow}=require('../utils/purchaseMapper');
+class Purchase extends BaseModel{
+ constructor(){super({tableName:'purchases',primaryKey:'id',allowedFields:['supplier_id','purchase_date','invoice_number','subtotal','discount_amount','tax_amount','total_amount','paid_amount','due_amount','payment_status','purchase_status','remarks','created_by'],searchableFields:['purchase_number','invoice_number','remarks'],sortableFields:['purchase_number','invoice_number','purchase_date','subtotal','total_amount','paid_amount','due_amount','payment_status','purchase_status','created_at','updated_at'],defaultSortColumn:'created_at',defaultSortDirection:'DESC'});}
+ buildFilters(o={}){const w=[],v=[];if(o.search){const s=`%${String(o.search).trim()}%`;w.push('(p.purchase_number LIKE ? OR p.invoice_number LIKE ? OR s.supplier_name LIKE ? OR s.phone LIKE ? OR a.full_name LIKE ? OR EXISTS (SELECT 1 FROM purchase_items spi JOIN medicines sm ON sm.id=spi.medicine_id WHERE spi.purchase_id=p.id AND sm.medicine_name LIKE ?))');v.push(...Array(6).fill(s));}if(o.supplierId){w.push('p.supplier_id=?');v.push(o.supplierId);}if(o.paymentStatus){w.push('p.payment_status=?');v.push(o.paymentStatus==='unpaid'?'unpaid':o.paymentStatus);}if(o.purchaseStatus){w.push('p.purchase_status=?');v.push(o.purchaseStatus);}if(o.dateFrom){w.push('p.purchase_date>=?');v.push(o.dateFrom);}if(o.dateTo){w.push('p.purchase_date<=?');v.push(o.dateTo);}return{where:w.length?`WHERE ${w.join(' AND ')}`:'',values:v};}
+ async findAllWithSummary(o={}){const{page,limit}=normalizePagination(o.page,o.limit),offset=calculateOffset(page,limit),{where,values}=this.buildFilters(o);const sorts={purchase_number:'p.purchase_number',invoice_number:'p.invoice_number',purchase_date:'p.purchase_date',subtotal:'p.subtotal',total_amount:'p.total_amount',paid_amount:'p.paid_amount',due_amount:'p.due_amount',payment_status:'p.payment_status',purchase_status:'p.purchase_status',created_at:'p.created_at',updated_at:'p.updated_at'};const sort=sorts[o.sortBy]||sorts.created_at,dir=String(o.sortDirection).toLowerCase()==='asc'?'ASC':'DESC';const joins='JOIN suppliers s ON s.id=p.supplier_id LEFT JOIN admins a ON a.id=p.created_by LEFT JOIN (SELECT purchase_id,COUNT(*) item_count,COALESCE(SUM(quantity),0) total_quantity FROM purchase_items GROUP BY purchase_id) x ON x.purchase_id=p.id';const rows=await executeQuery(`SELECT p.*,s.supplier_name,s.phone supplier_phone,a.full_name admin_name,COALESCE(x.item_count,0)item_count,COALESCE(x.total_quantity,0)total_quantity FROM purchases p ${joins} ${where} ORDER BY ${sort} ${dir} LIMIT ${limit} OFFSET ${offset}`,values);const count=await executeSingle(`SELECT COUNT(*) totalRecords FROM purchases p JOIN suppliers s ON s.id=p.supplier_id LEFT JOIN admins a ON a.id=p.created_by ${where}`,values);return{data:rows.map(mapPurchaseRow),pagination:buildPaginationMetadata(page,limit,Number(count?.totalRecords||0))};}
+ async countWithFilters(o={}){const{where,values}=this.buildFilters(o);const r=await executeSingle(`SELECT COUNT(*) totalRecords FROM purchases p JOIN suppliers s ON s.id=p.supplier_id LEFT JOIN admins a ON a.id=p.created_by ${where}`,values);return Number(r?.totalRecords||0);}
+ async findByIdWithRelations(id,connection=null){const sql=`SELECT p.*,s.supplier_name,s.contact_person,s.phone supplier_phone,s.email supplier_email,s.address supplier_address,s.city supplier_city,s.country supplier_country,a.full_name admin_name,a.email admin_email,ca.full_name cancelled_by_name FROM purchases p JOIN suppliers s ON s.id=p.supplier_id LEFT JOIN admins a ON a.id=p.created_by LEFT JOIN admins ca ON ca.id=p.cancelled_by WHERE p.id=?`;const row=connection?(await connection.execute(sql,[id]))[0][0]:await executeSingle(sql,[id]);return mapPurchaseRow(row);}
+ async findByIdForUpdate(id,c){const[rows]=await c.execute('SELECT * FROM purchases WHERE id=? FOR UPDATE',[id]);return rows[0]||null;}
+ async findByInvoiceNumber(supplierId,invoiceNumber,excludeId=null,c=null){if(!invoiceNumber)return null;const sql=`SELECT id FROM purchases WHERE invoice_number=?${excludeId?' AND id<>?':''} LIMIT 1`,params=excludeId?[invoiceNumber,excludeId]:[invoiceNumber];return c?(await c.execute(sql,params))[0][0]||null:executeSingle(sql,params);}
+ async createPurchase(data,c){const f=Object.keys(data);const[r]=await c.execute(`INSERT INTO purchases (${f.join(',')}) VALUES (${f.map(()=>'?').join(',')})`,f.map(k=>data[k]));return{insertId:r.insertId};}
+ async updatePurchaseNumber(id,n,c){await c.execute('UPDATE purchases SET purchase_number=? WHERE id=?',[n,id]);}
+ async updateStatus(id,data,c){await c.execute('UPDATE purchases SET purchase_status=?,cancelled_by=?,cancelled_at=CURRENT_TIMESTAMP,cancellation_reason=? WHERE id=?',[data.purchaseStatus,data.cancelledBy,data.cancellationReason,id]);}
+ async getSummary(){const r=await executeSingle(`SELECT COUNT(*) totalPurchases,COALESCE(SUM(purchase_status='completed'),0) completedPurchases,COALESCE(SUM(purchase_status='cancelled'),0) cancelledPurchases,COALESCE(SUM(CASE WHEN purchase_status='completed' THEN total_amount ELSE 0 END),0) totalPurchaseAmount,COALESCE(SUM(CASE WHEN purchase_status='completed' THEN paid_amount ELSE 0 END),0) totalPaidAmount,COALESCE(SUM(CASE WHEN purchase_status='completed' THEN due_amount ELSE 0 END),0) totalDueAmount,COALESCE(SUM(purchase_status='completed' AND purchase_date=CURRENT_DATE),0) todayPurchaseCount,COALESCE(SUM(CASE WHEN purchase_status='completed' AND purchase_date=CURRENT_DATE THEN total_amount ELSE 0 END),0) todayPurchaseAmount FROM purchases`);return Object.fromEntries(Object.entries(r||{}).map(([k,v])=>[k,Number(v||0)]));}
+ async getItemSummary(id){return executeSingle('SELECT COUNT(*) itemCount,COALESCE(SUM(quantity),0) totalQuantity FROM purchase_items WHERE purchase_id=?',[id]);}
 }
-
-module.exports = new Purchase();
+module.exports=new Purchase();

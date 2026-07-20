@@ -6,7 +6,7 @@ const { mapInventoryLogRow, mapTransactionTypeToDatabase } = require('../utils/i
 class InventoryLog extends BaseModel {
   constructor() { super({ tableName: 'inventory_logs', primaryKey: 'id', allowedFields: ['medicine_id', 'admin_id', 'transaction_type', 'quantity', 'quantity_change', 'previous_quantity', 'new_quantity', 'remaining_stock', 'reference_type', 'reference_id', 'reason', 'notes', 'remarks'], searchableFields: ['reason', 'notes'], sortableFields: ['created_at'], defaultSortColumn: 'created_at', defaultSortDirection: 'DESC' }); }
   async createLog(data, connection) {
-    const [result] = await connection.execute(`INSERT INTO inventory_logs (medicine_id,admin_id,transaction_type,quantity,quantity_change,previous_quantity,new_quantity,remaining_stock,reference_type,reference_id,reason,notes,remarks) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`, [data.medicineId, data.adminId, mapTransactionTypeToDatabase(data.transactionType), data.quantity, data.quantityChange, data.previousQuantity, data.newQuantity, data.newQuantity, 'manual', null, data.reason, data.notes, data.reason]);
+    const [result] = await connection.execute(`INSERT INTO inventory_logs (medicine_id,admin_id,transaction_type,quantity,quantity_change,previous_quantity,new_quantity,remaining_stock,reference_type,reference_id,reason,notes,remarks) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`, [data.medicineId, data.adminId, mapTransactionTypeToDatabase(data.transactionType), data.quantity, data.quantityChange, data.previousQuantity, data.newQuantity, data.newQuantity, data.referenceType || 'manual', data.referenceId || null, data.reason, data.notes || null, data.reason]);
     return { id: result.insertId };
   }
   buildFilters(options = {}, fixedMedicineId = null) {

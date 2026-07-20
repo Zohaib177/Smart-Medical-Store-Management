@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: 'Segoe UI Variable Text', Inter, 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   line-height: 1.5;
   font-weight: 400;
   color: #0f172a;
@@ -12,12 +12,33 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
+}
+
+@media print {
+  @page { size: A4; margin: 12mm; }
+  body { background: white !important; }
+  body * { visibility: hidden !important; }
+  .purchase-invoice, .purchase-invoice * { visibility: visible !important; }
+  .purchase-invoice { position: absolute !important; inset: 0 !important; width: 100% !important; padding: 0 !important; color: #0f172a !important; }
+  .purchase-invoice table { page-break-inside: auto; }
+  .purchase-invoice tr { page-break-inside: avoid; page-break-after: auto; }
+  .no-print { display: none !important; }
 }
 
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  letter-spacing: -0.005em;
+  background: #f5f7f6;
+}
+
+h1,
+h2,
+h3 {
+  font-family: 'Segoe UI Variable Display', 'Segoe UI Variable Text', Inter, 'Segoe UI', system-ui, sans-serif;
+  text-wrap: balance;
 }
 
 * {
@@ -25,8 +46,63 @@ body {
 }
 
 button,
-input {
+input,
+select,
+textarea {
   font: inherit;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+input,
+select,
+textarea {
+  transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+}
+
+::selection {
+  color: #052e24;
+  background: #a7f3d0;
+}
+
+main table {
+  font-variant-numeric: tabular-nums;
+}
+
+main table thead {
+  border-top: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+main table th {
+  letter-spacing: 0.055em;
+}
+
+main table tbody tr {
+  transition: background-color 140ms ease;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: #cbd5e1;
+  background-clip: padding-box;
 }
 
 @keyframes mobile-sidebar-enter {

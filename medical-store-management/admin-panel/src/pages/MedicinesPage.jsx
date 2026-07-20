@@ -1,2 +1,195 @@
-import { Plus, RefreshCw } from 'lucide-react'; import MedicineDeleteDialog from '../components/medicines/MedicineDeleteDialog'; import MedicineDetailsModal from '../components/medicines/MedicineDetailsModal'; import MedicineFilters from '../components/medicines/MedicineFilters'; import MedicineForm from '../components/medicines/MedicineForm'; import MedicineTable from '../components/medicines/MedicineTable'; import Button from '../components/ui/Button'; import ConfirmDialog from '../components/ui/ConfirmDialog'; import ErrorState from '../components/ui/ErrorState'; import Modal from '../components/ui/Modal'; import PageHeader from '../components/ui/PageHeader'; import Pagination from '../components/ui/Pagination'; import Toast from '../components/ui/Toast'; import useMedicines from '../hooks/useMedicines'; import { formatNumber } from '../utils/formatters';
-export default function MedicinesPage() { const s = useMedicines(); const { medicines,pagination,filters,options,isLoading,isRefreshing,isLoadingOptions,error,selectedMedicine,modals,mutation,isDetailsLoading,toast,refreshMedicines,setSearch,setStatus,setCategory,setCompany,setStockStatus,setExpiryStatus,setSort,clearFilters,setPage,openCreateModal,openEditModal,openDetailsModal,openDeleteModal,openStatusModal,closeModals,createMedicine,updateMedicine,updateStatus,deleteMedicine,clearToast }=s; const filtered=Boolean(filters.search||filters.status||filters.categoryId||filters.companyId||filters.stockStatus||filters.expiryStatus||filters.sortBy!=='created_at'||filters.sortDirection!=='desc'); const activating=selectedMedicine?.nextStatus==='active'; const handlers={setSearch,setStatus,setCategory,setCompany,setStockStatus,setExpiryStatus,setSort,clearFilters}; return <div className="space-y-6"><PageHeader title="Medicine Management" description="Manage medicine details, pricing, stock levels and expiry information." actions={<Button onClick={openCreateModal}><Plus className="h-4 w-4" /> Add Medicine</Button>} /><section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"><MedicineFilters filters={filters} options={options} handlers={handlers} /><div className="flex items-center justify-between gap-3 px-4 py-3 sm:px-5"><p className="text-sm text-slate-500"><span className="font-semibold text-slate-800">{formatNumber(pagination.totalRecords)}</span> {pagination.totalRecords===1?'medicine':'medicines'}</p><Button variant="secondary" size="sm" onClick={refreshMedicines} disabled={isRefreshing||isLoading}><RefreshCw className={`h-4 w-4 ${isRefreshing?'animate-spin':''}`} /> {isRefreshing?'Refreshing...':'Refresh'}</Button></div>{error&&!medicines.length&&!isLoading?<div className="p-5"><ErrorState title="Unable to load medicines." description="Check your connection and try again." onRetry={refreshMedicines} /></div>:<MedicineTable medicines={medicines} isLoading={isLoading} hasFilters={filtered} actions={{onView:openDetailsModal,onEdit:openEditModal,onStatus:openStatusModal,onDelete:openDeleteModal}} />}<Pagination pagination={pagination} onPageChange={setPage} /></section><Modal isOpen={modals.create} onClose={closeModals} title="Add Medicine" description="Add product, pricing, stock and expiry information." size="lg"><MedicineForm options={options} isLoadingOptions={isLoadingOptions} onSubmit={createMedicine} onCancel={closeModals} isSaving={mutation==='create'} /></Modal><Modal isOpen={modals.edit} onClose={closeModals} title="Edit Medicine" description="Update medicine information without changing transaction history." size="lg"><MedicineForm medicine={selectedMedicine} options={options} isLoadingOptions={isLoadingOptions} onSubmit={updateMedicine} onCancel={closeModals} isSaving={mutation==='update'} /></Modal><MedicineDetailsModal medicine={selectedMedicine} isOpen={modals.details} onClose={closeModals} isLoading={isDetailsLoading} /><MedicineDeleteDialog medicine={selectedMedicine} isOpen={modals.delete} onClose={closeModals} onConfirm={deleteMedicine} isDeleting={mutation==='delete'} /><ConfirmDialog isOpen={modals.status} onClose={closeModals} onConfirm={updateStatus} title={`${activating?'Activate':'Deactivate'} medicine?`} description={activating?'This medicine will become available for active operations.':'This medicine will no longer be available for active selections. Existing transaction records will remain unchanged.'} confirmLabel={activating?'Activate Medicine':'Deactivate Medicine'} variant={activating?'primary':'danger'} isLoading={mutation==='status'} /><Toast toast={toast} onClose={clearToast} /></div>; }
+import { Plus, RefreshCw } from "lucide-react";
+import MedicineDeleteDialog from "../components/medicines/MedicineDeleteDialog";
+import MedicineDetailsModal from "../components/medicines/MedicineDetailsModal";
+import MedicineFilters from "../components/medicines/MedicineFilters";
+import MedicineForm from "../components/medicines/MedicineForm";
+import MedicineTable from "../components/medicines/MedicineTable";
+import Button from "../components/ui/Button";
+import ConfirmDialog from "../components/ui/ConfirmDialog";
+import ErrorState from "../components/ui/ErrorState";
+import Modal from "../components/ui/Modal";
+import PageHeader from "../components/ui/PageHeader";
+import Pagination from "../components/ui/Pagination";
+import Toast from "../components/ui/Toast";
+import useMedicines from "../hooks/useMedicines";
+import { formatNumber } from "../utils/formatters";
+export default function MedicinesPage() {
+  const s = useMedicines();
+  const {
+    medicines,
+    pagination,
+    filters,
+    options,
+    isLoading,
+    isRefreshing,
+    isLoadingOptions,
+    error,
+    selectedMedicine,
+    modals,
+    mutation,
+    isDetailsLoading,
+    toast,
+    refreshMedicines,
+    setSearch,
+    setStatus,
+    setCategory,
+    setCompany,
+    setStockStatus,
+    setExpiryStatus,
+    setSort,
+    clearFilters,
+    setPage,
+    openCreateModal,
+    openEditModal,
+    openDetailsModal,
+    openDeleteModal,
+    openStatusModal,
+    closeModals,
+    createMedicine,
+    updateMedicine,
+    updateStatus,
+    deleteMedicine,
+    clearToast,
+  } = s;
+  const filtered = Boolean(
+    filters.search ||
+    filters.status ||
+    filters.categoryId ||
+    filters.companyId ||
+    filters.stockStatus ||
+    filters.expiryStatus ||
+    filters.sortBy !== "created_at" ||
+    filters.sortDirection !== "desc",
+  );
+  const activating = selectedMedicine?.nextStatus === "active";
+  const handlers = {
+    setSearch,
+    setStatus,
+    setCategory,
+    setCompany,
+    setStockStatus,
+    setExpiryStatus,
+    setSort,
+    clearFilters,
+  };
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title="Medicine Management"
+        description="Manage medicine details, pricing, stock levels and expiry information."
+        actions={
+          <Button onClick={openCreateModal}>
+            <Plus className="h-4 w-4" /> Add Medicine
+          </Button>
+        }
+      />
+      <section className="overflow-hidden rounded-[22px] border border-slate-200/80 bg-white shadow-[0_8px_28px_rgba(15,23,42,0.04)]">
+        <MedicineFilters
+          filters={filters}
+          options={options}
+          handlers={handlers}
+        />
+        <div className="flex items-center justify-between gap-3 px-4 py-3 sm:px-5">
+          <p className="text-sm text-slate-500">
+            <span className="font-semibold text-slate-800">
+              {formatNumber(pagination.totalRecords)}
+            </span>{" "}
+            {pagination.totalRecords === 1 ? "medicine" : "medicines"}
+          </p>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={refreshMedicines}
+            disabled={isRefreshing || isLoading}
+          >
+            <RefreshCw
+              className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+            />{" "}
+            {isRefreshing ? "Refreshing..." : "Refresh"}
+          </Button>
+        </div>
+        {error && !medicines.length && !isLoading ? (
+          <div className="p-5">
+            <ErrorState
+              title="Unable to load medicines."
+              description="Check your connection and try again."
+              onRetry={refreshMedicines}
+            />
+          </div>
+        ) : (
+          <MedicineTable
+            medicines={medicines}
+            isLoading={isLoading}
+            hasFilters={filtered}
+            actions={{
+              onView: openDetailsModal,
+              onEdit: openEditModal,
+              onStatus: openStatusModal,
+              onDelete: openDeleteModal,
+            }}
+          />
+        )}
+        <Pagination pagination={pagination} onPageChange={setPage} />
+      </section>
+      <Modal
+        isOpen={modals.create}
+        onClose={closeModals}
+        title="Add Medicine"
+        description="Add product, pricing, stock and expiry information."
+        size="lg"
+      >
+        <MedicineForm
+          options={options}
+          isLoadingOptions={isLoadingOptions}
+          onSubmit={createMedicine}
+          onCancel={closeModals}
+          isSaving={mutation === "create"}
+        />
+      </Modal>
+      <Modal
+        isOpen={modals.edit}
+        onClose={closeModals}
+        title="Edit Medicine"
+        description="Update medicine information without changing transaction history."
+        size="lg"
+      >
+        <MedicineForm
+          medicine={selectedMedicine}
+          options={options}
+          isLoadingOptions={isLoadingOptions}
+          onSubmit={updateMedicine}
+          onCancel={closeModals}
+          isSaving={mutation === "update"}
+        />
+      </Modal>
+      <MedicineDetailsModal
+        medicine={selectedMedicine}
+        isOpen={modals.details}
+        onClose={closeModals}
+        isLoading={isDetailsLoading}
+      />
+      <MedicineDeleteDialog
+        medicine={selectedMedicine}
+        isOpen={modals.delete}
+        onClose={closeModals}
+        onConfirm={deleteMedicine}
+        isDeleting={mutation === "delete"}
+      />
+      <ConfirmDialog
+        isOpen={modals.status}
+        onClose={closeModals}
+        onConfirm={updateStatus}
+        title={`${activating ? "Activate" : "Deactivate"} medicine?`}
+        description={
+          activating
+            ? "This medicine will become available for active operations."
+            : "This medicine will no longer be available for active selections. Existing transaction records will remain unchanged."
+        }
+        confirmLabel={activating ? "Activate Medicine" : "Deactivate Medicine"}
+        variant={activating ? "primary" : "danger"}
+        isLoading={mutation === "status"}
+      />
+      <Toast toast={toast} onClose={clearToast} />
+    </div>
+  );
+}

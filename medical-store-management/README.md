@@ -608,3 +608,40 @@ Changing a supplier to inactive removes it from future active supplier options w
 8. Run `npm run lint` in `backend` and `npm run build` in `admin-panel`.
 
 Supplier error codes include `SUPPLIER_NOT_FOUND`, `SUPPLIER_ALREADY_EXISTS`, `SUPPLIER_EMAIL_EXISTS`, `SUPPLIER_IN_USE`, `SUPPLIER_CREATE_FAILED`, `SUPPLIER_UPDATE_FAILED`, and `SUPPLIER_DELETE_FAILED`. Balance/tax error codes become applicable only if a future non-destructive schema phase adds those concepts.
+
+## Phase 10 - Purchase Management
+
+Phase 10 replaces the purchase placeholder with protected purchase listing, summary, filters, pagination, invoice creation, multiple medicine items, details, printing, and safe cancellation. It deliberately does not add supplier payments, ledgers, purchase returns, sales, barcode scanning, approvals, or multi-store behavior.
+
+### Schema and calculations
+
+The non-destructive migration is [database/phase_10_purchase_management.sql](database/phase_10_purchase_management.sql). It retains the existing `purchases.remarks` and `purchase_items.purchase_price` column names and adds only the missing purchase number, financial totals, status/audit columns, item batch/expiry fields, indexes, and administrator foreign keys. The existing invoice number is required and globally unique, so the API follows that database rule rather than inventing per-supplier uniqueness. The current `suppliers` table has no `current_balance`; purchase due amounts are stored on the invoice but no unsupported supplier balance is simulated.
+
+For each item, `subtotal = quantity * unitPurchasePrice`. The backend recalculates invoice subtotal, applies `totalAmount = subtotal - discountAmount + taxAmount`, rejects a discount above subtotal or paid amount above total, and calculates `dueAmount = totalAmount - paidAmount`. Payment status is derived as `paid` when due is zero, `partial` when both paid and due are positive, and `unpaid` when paid is zero and due is positive. Frontend totals are previews only.
+
+Internal numbers use `PUR-YYYYMMDD-000001`. The suffix comes from the inserted database ID under a unique index, not a row count, making concurrent generation safe.
+
+### Protected routes
+
+```http
+GET   /api/purchases
+GET   /api/purchases/summary
+GET   /api/purchases/options
+GET   /api/purchases/:id
+POST  /api/purchases
+PATCH /api/purchases/:id/cancel
+```
+
+Frontend routes are `/admin/purchases` and `/admin/purchases/new`. The React module includes summary cards, debounced search, supplier/payment/purchase/date filters, allowlisted sorting, pagination, loading/empty/error states, a dynamic item form, authoritative-total preview, purchase details, a print-only invoice layout, cancellation confirmation, and toast feedback.
+
+### Transaction and stock behavior
+
+Creation locks the active supplier and all selected active medicine rows in consistent ID order. It verifies invoice uniqueness, calculates totals, inserts the invoice/items, increases each medicine stock, updates the single current medicine batch/expiry and last purchase price when supplied, and creates one authenticated `purchase` inventory log per item before committing. The current medicine schema supports one current batch/expiry only; Phase 10 does not invent batch-level warehouse storage.
+
+Cancellation never deletes a purchase. It locks the completed purchase and medicine rows, checks that every current quantity can cover the reversal, subtracts purchased quantities, creates reversal audit logs, and marks the invoice cancelled with administrator, time, and reason in one transaction. Insufficient stock returns `409 PURCHASE_CANCELLATION_STOCK_CONFLICT`; a second cancellation returns `409 PURCHASE_ALREADY_CANCELLED`.
+
+### Testing
+
+Apply the Phase 10 migration once to an existing Phase 1-9 database, restart the backend, then run `npm run lint` in `backend` and `npm run build` in `admin-panel`. Verify anonymous purchase requests return `401`; authenticated list/options/summary/details; all filters and allowlisted sorts; invalid dates and purchase values; duplicate invoice/medicine rejection; server-side total recalculation; unique numbers; stock/log creation; transactional rollback; successful and insufficient-stock cancellation; retained cancelled details; and regressions across auth, health, dashboard, supplier, medicine, and inventory routes.
+
+Purchase errors include `PURCHASE_NOT_FOUND`, `PURCHASE_INVOICE_EXISTS`, `DUPLICATE_PURCHASE_MEDICINE`, `INVALID_PURCHASE_DATE`, `INVALID_PURCHASE_ITEMS`, `INVALID_PURCHASE_QUANTITY`, `INVALID_PURCHASE_PRICE`, `INVALID_EXPIRY_DATE`, `INVALID_DISCOUNT`, `INVALID_PAID_AMOUNT`, `PURCHASE_CANCELLATION_STOCK_CONFLICT`, `PURCHASE_ALREADY_CANCELLED`, `PURCHASE_CREATE_FAILED`, and `PURCHASE_CANCEL_FAILED`. Database errors remain normalized by the existing API error middleware.

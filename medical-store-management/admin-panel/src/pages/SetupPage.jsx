@@ -36,34 +36,34 @@ function SetupPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800">
-      <header className="border-b border-slate-200 bg-white">
+    <div className="min-h-screen bg-[#f5f7f6] text-slate-800">
+      <header className="border-b border-slate-200/80 bg-white/90 shadow-[0_1px_3px_rgba(15,23,42,0.03)] backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-6 py-6 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-3">
-            <div className="rounded-2xl bg-emerald-100 p-3 text-emerald-700">
+            <div className="rounded-2xl bg-gradient-to-br from-emerald-100 to-emerald-50 p-3 text-emerald-700 shadow-sm ring-1 ring-emerald-200">
               <Building2 className="h-6 w-6" />
             </div>
             <div>
-              <h1 className="text-2xl font-semibold">Medical Store Admin Panel</h1>
+              <h1 className="text-2xl font-bold tracking-[-0.03em] text-slate-950">Medical Store Admin Panel</h1>
               <p className="text-sm text-slate-500">System foundation and database connection status</p>
             </div>
           </div>
-          <div className="rounded-full bg-slate-100 px-4 py-2 text-sm font-medium text-slate-600">
+          <div className="rounded-full bg-emerald-50 px-4 py-2 text-xs font-bold uppercase tracking-wider text-emerald-700 ring-1 ring-emerald-200">
             Phase 0
           </div>
         </div>
       </header>
 
       <main className="mx-auto flex max-w-7xl flex-col gap-6 px-6 py-8">
-        <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <section className="rounded-[24px] border border-slate-200/80 bg-white p-6 shadow-[0_12px_36px_rgba(15,23,42,0.06)]">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
-              <h2 className="text-xl font-semibold">Setup Status</h2>
+              <h2 className="text-xl font-bold tracking-[-0.025em] text-slate-950">Setup Status</h2>
               <p className="mt-1 text-sm text-slate-500">Confirm that the backend and database are ready for future modules.</p>
             </div>
             <button
               onClick={checkHealth}
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+              className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:-translate-y-px hover:border-slate-300 hover:bg-slate-50"
             >
               <RefreshCw className={`h-4 w-4 ${isRetrying ? 'animate-spin' : ''}`} />
               Retry Connection

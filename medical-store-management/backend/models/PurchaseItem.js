@@ -1,17 +1,8 @@
-const BaseModel = require('./BaseModel');
-
-class PurchaseItem extends BaseModel {
-  constructor() {
-    super({
-      tableName: 'purchase_items',
-      primaryKey: 'id',
-      allowedFields: ['purchase_id', 'medicine_id', 'quantity', 'purchase_price', 'subtotal'],
-      searchableFields: ['purchase_id', 'medicine_id'],
-      sortableFields: ['id', 'purchase_id', 'medicine_id', 'created_at'],
-      defaultSortColumn: 'created_at',
-      defaultSortDirection: 'DESC',
-    });
-  }
+const BaseModel=require('./BaseModel');const{executeQuery,executeSingle}=require('../services/databaseService');const{mapPurchaseItemRow}=require('../utils/purchaseMapper');
+class PurchaseItem extends BaseModel{constructor(){super({tableName:'purchase_items',primaryKey:'id',allowedFields:['purchase_id','medicine_id','batch_number','expiry_date','quantity','purchase_price','subtotal'],sortableFields:['created_at'],defaultSortColumn:'created_at',defaultSortDirection:'DESC'});}
+ async createMany(purchaseId,items,c){const values=[];for(const i of items)values.push(purchaseId,i.medicineId,i.batchNumber,i.expiryDate,i.quantity,i.unitPurchasePrice,i.subtotal);const placeholders=items.map(()=>'(?,?,?,?,?,?,?)').join(',');await c.execute(`INSERT INTO purchase_items (purchase_id,medicine_id,batch_number,expiry_date,quantity,purchase_price,subtotal) VALUES ${placeholders}`,values);}
+ async findByPurchaseId(id,c=null){const sql='SELECT pi.*,m.medicine_name,m.generic_name,m.barcode FROM purchase_items pi JOIN medicines m ON m.id=pi.medicine_id WHERE pi.purchase_id=? ORDER BY pi.id';const rows=c?(await c.execute(sql,[id]))[0]:await executeQuery(sql,[id]);return rows.map(mapPurchaseItemRow);}
+ async getTotalsByPurchaseId(id){const r=await executeSingle('SELECT COALESCE(SUM(quantity),0) totalQuantity,COALESCE(SUM(subtotal),0) subtotal FROM purchase_items WHERE purchase_id=?',[id]);return{totalQuantity:Number(r?.totalQuantity||0),subtotal:Number(r?.subtotal||0)};}
+ async countByMedicineId(id){const r=await executeSingle('SELECT COUNT(*) count FROM purchase_items WHERE medicine_id=?',[id]);return Number(r?.count||0);}
 }
-
-module.exports = new PurchaseItem();
+module.exports=new PurchaseItem();

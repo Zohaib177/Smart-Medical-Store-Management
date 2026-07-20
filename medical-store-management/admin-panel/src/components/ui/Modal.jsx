@@ -32,13 +32,13 @@ export default function Modal({ isOpen, onClose, title, description, children, s
   const widths = { sm: 'max-w-md', md: 'max-w-xl', lg: 'max-w-2xl' };
 
   return createPortal(
-    <div className="fixed inset-0 z-[70] flex items-end justify-center p-0 sm:items-center sm:p-4">
-      <button type="button" className="absolute inset-0 bg-slate-950/55" onClick={onClose} aria-label="Close dialog" />
-      <div ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="modal-title" className={`relative max-h-[92vh] w-full overflow-y-auto rounded-t-3xl bg-white shadow-2xl outline-none sm:rounded-2xl ${widths[size] || widths.md}`}>
-        <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-slate-200 bg-white px-5 py-4 sm:px-6">
+    <div className="fixed inset-0 z-[70] flex items-end justify-center p-0 sm:items-center sm:p-5">
+      <button type="button" className="absolute inset-0 bg-slate-950/60 backdrop-blur-[2px]" onClick={onClose} aria-label="Close dialog" />
+      <div ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="modal-title" className={`relative max-h-[92vh] w-full overflow-y-auto rounded-t-[26px] border border-white/50 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.28)] outline-none sm:rounded-[22px] ${widths[size] || widths.md}`}>
+        <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-slate-200/80 bg-white/95 px-5 py-5 backdrop-blur sm:px-6">
           <div>
-            <h2 id="modal-title" className="text-lg font-bold text-slate-900">{title}</h2>
-            {description && <p className="mt-1 text-sm text-slate-500">{description}</p>}
+            <h2 id="modal-title" className="text-xl font-bold tracking-[-0.025em] text-slate-950">{title}</h2>
+            {description && <p className="mt-1.5 text-sm leading-6 text-slate-500">{description}</p>}
           </div>
           <IconButton label="Close dialog" onClick={onClose} className="-mr-2 -mt-1 shrink-0"><X className="h-5 w-5" /></IconButton>
         </div>

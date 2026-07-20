@@ -13,15 +13,15 @@ function SidebarContent({ collapsed = false, mobile = false, onNavigate, onLogou
   const adminName = admin?.full_name || admin?.fullName || 'Administrator';
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-slate-950 text-slate-200">
+    <div className="flex h-full min-h-0 flex-col bg-[#07120f] text-slate-200">
       <div className={`flex h-20 shrink-0 items-center border-b border-white/10 ${collapsed ? 'justify-center px-3' : 'gap-3 px-5'}`}>
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-500 text-white shadow-lg shadow-emerald-950/30">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-400 to-emerald-600 text-white shadow-lg shadow-emerald-950/30 ring-1 ring-white/10">
           <ShieldPlus className="h-6 w-6" aria-hidden="true" />
         </span>
         {!collapsed && (
           <div className="min-w-0">
-            <p className="truncate font-bold text-white">Medical Store</p>
-            <p className="truncate text-xs text-slate-400">Admin Management</p>
+            <p className="truncate font-bold tracking-[-0.02em] text-white">Medical Store</p>
+            <p className="mt-0.5 truncate text-[11px] font-medium uppercase tracking-[0.08em] text-slate-500">Admin Management</p>
           </div>
         )}
         {mobile && (
@@ -40,7 +40,7 @@ function SidebarContent({ collapsed = false, mobile = false, onNavigate, onLogou
               to={path}
               title={collapsed ? label : undefined}
               onClick={onNavigate}
-              className={({ isActive }) => `group flex min-h-11 items-center rounded-xl text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${collapsed ? 'justify-center px-2' : 'gap-3 px-3'} ${isActive ? 'bg-emerald-500 text-white shadow-md shadow-emerald-950/20' : 'text-slate-400 hover:bg-white/7 hover:text-white'}`}
+              className={({ isActive }) => `group flex min-h-11 items-center rounded-xl text-sm font-semibold transition duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${collapsed ? 'justify-center px-2' : 'gap-3 px-3'} ${isActive ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-md shadow-emerald-950/25' : 'text-slate-400 hover:bg-white/[0.07] hover:text-white'}`}
             >
               <Icon className="h-5 w-5 shrink-0" aria-hidden="true" />
               {!collapsed && <span className="truncate">{label}</span>}
@@ -51,7 +51,7 @@ function SidebarContent({ collapsed = false, mobile = false, onNavigate, onLogou
       </nav>
 
       <div className={`shrink-0 border-t border-white/10 p-3 ${collapsed ? 'space-y-2' : ''}`}>
-        <div className={`flex items-center ${collapsed ? 'justify-center' : 'gap-3 rounded-xl bg-white/5 p-3'}`} title={collapsed ? adminName : undefined}>
+        <div className={`flex items-center ${collapsed ? 'justify-center' : 'gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.04] p-3'}`} title={collapsed ? adminName : undefined}>
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-400/15 text-xs font-bold text-emerald-300">{getInitials(adminName)}</span>
           {!collapsed && (
             <div className="min-w-0 flex-1">

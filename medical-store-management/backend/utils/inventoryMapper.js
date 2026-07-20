@@ -1,6 +1,6 @@
 const { getStockStatus, getExpiryStatus } = require('./medicineMapper');
-const fromDb = { stock_in: 'stockIn', stock_out: 'stockOut', correction: 'correction', adjustment: 'correction' };
-const toDb = { stockIn: 'stock_in', stockOut: 'stock_out', correction: 'correction' };
+const fromDb = { stock_in: 'stockIn', stock_out: 'stockOut', correction: 'correction', adjustment: 'correction', purchase: 'purchase', return: 'purchaseCancellation' };
+const toDb = { stockIn: 'stock_in', stockOut: 'stock_out', correction: 'correction', purchase: 'purchase', purchaseCancellation: 'return' };
 const mapTransactionTypeFromDatabase = (value) => fromDb[value] || value;
 const mapTransactionTypeToDatabase = (value) => toDb[value] || null;
 function mapInventoryMedicineRow(row) {
